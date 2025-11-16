@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <title>Wheels of Fortune – User Input Version</title>
 
-  <!-- 让画布在不同设备上自适应 -->
+  <!-- Make the canvas adapt to different screen sizes -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- 简单样式：去掉边距，让 canvas 填满窗口 -->
+  <!-- Basic layout styles: remove margins so the p5 canvas can fill the window -->
   <style>
     html, body {
       margin: 0;
@@ -20,11 +20,13 @@
       color: #f5f5f5;
     }
 
+    /* Remove the default gap under the canvas element */
     canvas {
-      display: block; /* 去掉 canvas 下面那条神秘空隙 */
+      display: block;
     }
 
-    /* 左上角的操作说明，不挡鼠标事件 */
+    /* Small instruction panel in the top-left corner.
+       pointer-events: none ensures mouse events go to the canvas, not this panel. */
     main {
       position: fixed;
       top: 0;
@@ -49,23 +51,24 @@
     }
   </style>
 
-  <!-- p5.js 库（CDN） -->
+  <!-- p5.js library (from CDN).
+       If you prefer a local copy, replace this URL with your own file. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 
-  <!-- 先加载小组版代码：包含 setup/draw/类定义等 -->
-  <script src="sketch.js"></script>
+  <!-- Group code: static version with layout, systems, setup() and draw() -->
+  <script src="group_static.js"></script>
 
-  <!-- 再加载个人版代码：user input 扩展（mouse/keyboard） -->
+  <!-- Individual code: user input extension (mouse + keyboard behaviour) -->
   <script src="userinput-lixu0708.js"></script>
 </head>
 <body>
-  <!-- 简单的操作说明（可根据你实际键位修改） -->
+  <!-- Instruction overlay. This does not block mouse input on the canvas. -->
   <main>
     <h1>Wheels of Fortune – User Input</h1>
     <p>
       Controls:<br />
       • Move / drag mouse: wheels near the cursor grow<br />
-      • R: regenerate layout (Shift+R keeps same seed)<br />
+      • R: regenerate layout (Shift+R keeps the same seed)<br />
       • S: save current frame as PNG<br />
       • ↑ / ↓: change hover strength<br />
       • Left / Right click: adjust breathing effect
