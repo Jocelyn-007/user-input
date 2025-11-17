@@ -213,9 +213,9 @@ class Wheel {
   }
 
   getEffectiveR() {
-    // pulse makes the wheel scale up slightly when the user interacts
-    return this.baseR * (1 + 0.18 * this.pulse);
-  }
+  // make the scaling more noticeable when the wheel is activated
+  return this.baseR * (1 + 0.5 * this.pulse);
+}
 
   // Update animation parameters based on current mouse position and mouse press
   updateFromInput() {
