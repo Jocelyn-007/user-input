@@ -210,26 +210,28 @@ class Wheel {
   // Update animation parameters according to mouse position and mouse press
   updateFromInput() {
     const d = dist(mouseX, mouseY, this.x, this.y);
-    const influenceRadius = this.baseR * 3.0; // large interactive zone
+// enlarge the area where the cursor can affect the wheel
+const influenceRadius = this.baseR * 3.0;   // was 2.2
 
-    if (d < influenceRadius) {
-      // 0..1, 1 when cursor is exactly on top of the wheel
-      const proximity = 1 - d / influenceRadius;
+if (d < influenceRadius) {
+  // Closer to the cursor → stronger effect
+  const proximity = 1 - d / influenceRadius; // 0..1
 
-      // Stronger pulse when close or when mouse is pressed
-      const targetPulse = mouseIsPressed ? 1 : 0.9 * proximity;
-      this.pulse = lerp(this.pulse, targetPulse, 0.2);
+  // stronger pulse when the user is close or pressing the mouse
+  const targetPulse = mouseIsPressed ? 1 : 0.9 * proximity; // was 0.6 * proximity
+  this.pulse = lerp(this.pulse, targetPulse, 0.2);          // was 0.15
 
-      // Faster rotation when closer and when mouse is pressed
-      const targetSpeed = mouseIsPressed ? 0.08 : 0.05 * proximity;
-      this.rotationSpeed = lerp(this.rotationSpeed, targetSpeed, 0.18);
-    } else {
-      // When the cursor is far away, slowly relax back to rest
-      this.pulse = lerp(this.pulse, 0, 0.12);
-      this.rotationSpeed = lerp(this.rotationSpeed, 0, 0.12);
-    }
+  // slightly faster rotation speeds
+  const targetSpeed = mouseIsPressed ? 0.08 : 0.05 * proximity; // was 0.06 / 0.03
+  this.rotationSpeed = lerp(this.rotationSpeed, targetSpeed, 0.18); // was 0.15
+} else {
+  // Let the wheel slowly calm down when the cursor is far away
+  this.pulse = lerp(this.pulse, 0, 0.12);          // was 0.1
+  this.rotationSpeed = lerp(this.rotationSpeed, 0, 0.12);  // was 0.1
+}
 
-    this.rotation += this.rotationSpeed;
+this.rotation += this.rotationSpeed;
+
   }
 
   // Draw the wheel with current animated state
