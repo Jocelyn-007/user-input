@@ -143,173 +143,133 @@ const DotSystem = {
 };
 
 // ======================================================
-// Part 3. Wheels and bead rings (user input version)
+// Part 3. WheelSystem — Wheels and bead rings
 // ======================================================
 
+// one
 class Wheel {
-  constructor(x, y, baseR) {
-    this.x = x;
-    this.y = y;
-    this.baseR = baseR;
+    constructor(x, y, baseR){
+        this.x = x;
+        this.y = y;
+        this.baseR = baseR;
 
-    // Core and bead colours taken from the shared palette
-    this.coreCol  = PaletteSystem.pick();
-    this.beadColor = PaletteSystem.pick();
+        this.coreCol  = PaletteSystem.pick();
+        this.beadColor = PaletteSystem.pick();
 
-    // -----------------------------
-    // Internal layered structure
-    // -----------------------------
-    this.layers = [];
-    const nLayers = int(random(3, 5));
+        //inside
+        this.layers = [];
 
-    for (let i = 0; i < nLayers; i++) {
-      // Ratio describes how big this layer is relative to the wheel radius
-      const ratio = map(i, 0, nLayers - 1, 0.25, 1.0);
-      const style = random(["solid", "dots", "sunburst", "stripes"]);
-      const col = PaletteSystem.pick();
+        const nLayers = int(random(3, 5));
 
-      const layer = { ratio, style, col };
+        for(let i = 0; i< nLayers; i++) {
+            
+            const ratio = map(i, 0, nLayers - 1, 0.25, 1.0);
 
-      // For dot layers we pre-compute a ring of dots
-      if (style === "dots") {
-        const rad = this.baseR * ratio * 0.9;
-        layer.dots = DotSystem.makeRingDots(rad);
-      }
+        const style = random(["solid", "dots", "sunburst", "stripes"]);
+        const col = PaletteSystem.pick();
 
-      this.layers.push(layer);
+        const layer = {ratio, style, col};
+
+        if(style==="dots"){
+            const rad = this.baseR * ratio * 0.9;
+            layer.dots = DotSystem.makeRingDots(rad);
+        }
+
+        this.layers.push(layer);
+
+        }
+        const ringR = this.baseR * 0.88;
+        const beadSize = this.baseR * 0.09;
+        const circumference = TWO_PI * ringR;
+        const count = max(10, int(circumference / (beadSize * 1.2)));
+
+        this.beadRing = {
+            r: ringR,
+            size: beadSize,
+            count: count
+        };
     }
 
-    // -----------------------------
-    // Outer bead ring
-    // -----------------------------
-    const ringR = this.baseR * 0.88;
-    const beadSize = this.baseR * 0.09;
-    const circumference = TWO_PI * ringR;
-    const count = max(10, int(circumference / (beadSize * 1.2)));
+    getEffectiveR() {
 
-    this.beadRing = {
-      r: ringR,
-      size: beadSize,
-      count: count
-    };
-
-    // -----------------------------
-    // Animation state (user input)
-    // -----------------------------
-    this.pulse = 0;                 // 0..1, controls scale and brightness
-    this.rotation = random(TWO_PI); // starting angle
-    this.rotationSpeed = 0;         // updated based on mouse proximity
+        return this.baseR;
   }
 
-  // Effective radius with a strong scale effect when activated
-  getEffectiveR() {
-    // Up to +60% bigger when pulse is 1
-    return this.baseR * (1 + 0.6 * this.pulse);
-  }
+    // draw
+    display() {
 
-  // Update animation parameters according to mouse position and mouse press
-  updateFromInput() {
-    const d = dist(mouseX, mouseY, this.x, this.y);
-// enlarge the area where the cursor can affect the wheel
-const influenceRadius = this.baseR * 3.0;   // was 2.2
+        push();
+        translate(this.x, this.y);
 
-if (d < influenceRadius) {
-  // Closer to the cursor → stronger effect
-  const proximity = 1 - d / influenceRadius; // 0..1
+        const effectiveR = this.getEffectiveR();
 
-  // stronger pulse when the user is close or pressing the mouse
-  const targetPulse = mouseIsPressed ? 1 : 0.9 * proximity; // was 0.6 * proximity
-  this.pulse = lerp(this.pulse, targetPulse, 0.2);          // was 0.15
+       // -------------------------
+       // Small beads on the outer circle
+       // -------------------------
+        for (let i = 0; i < this.beadRing.count; i++) {
 
-  // slightly faster rotation speeds
-  const targetSpeed = mouseIsPressed ? 0.08 : 0.05 * proximity; // was 0.06 / 0.03
-  this.rotationSpeed = lerp(this.rotationSpeed, targetSpeed, 0.18); // was 0.15
-} else {
-  // Let the wheel slowly calm down when the cursor is far away
-  this.pulse = lerp(this.pulse, 0, 0.12);          // was 0.1
-  this.rotationSpeed = lerp(this.rotationSpeed, 0, 0.12);  // was 0.1
-}
+            const a  = (TWO_PI * i) / this.beadRing.count;
+            const bx = cos(a) * (effectiveR * 0.88);
+            const by = sin(a) * (effectiveR * 0.88);
 
-this.rotation += this.rotationSpeed;
+            // The dark halo behind the small pearl
+            fill(0, 0, 15);
+            ellipse(bx, by, this.beadRing.size * 1.4);
 
-  }
+            // Color small circle
+            fill(this.beadColor);
+            ellipse(bx, by, this.beadRing.size);
+        }
 
-  // Draw the wheel with current animated state
-  display() {
-    push();
-    translate(this.x, this.y);
-    rotate(this.rotation);
+        // -------------------------
+        // Internal multiple layers
+        // -------------------------
+        for (const L of this.layers) {
+            const rad = effectiveR * L.ratio * 0.9;
 
-    const effectiveR = this.getEffectiveR();
+            switch (L.style) {
+                case "solid":
+                    //circle
+                    fill(L.col);
+                    ellipse(0, 0, rad * 2);
+                    break;
 
-    // ---------------------------------
-    // Outer ring of small beads
-    // ---------------------------------
-    for (let i = 0; i < this.beadRing.count; i++) {
-      const a  = (TWO_PI * i) / this.beadRing.count;
-      const bx = cos(a) * (effectiveR * 0.88);
-      const by = sin(a) * (effectiveR * 0.88);
+                case "dots":
+                    //Fill the interior of the circle
+                    fill(L.col);
+                    for (const d of L.dots) {
+                        ellipse(d.x, d.y, d.r * 2);
+                    }
+                    break;
 
-      // Dark halo behind each bead (brightness grows with pulse)
-      const haloBrightness = lerp(15, 75, this.pulse);
-      fill(0, 0, haloBrightness);
-      ellipse(
-        bx,
-        by,
-        this.beadRing.size * 1.4 * (1 + 0.3 * this.pulse) // halo also scales a bit
-      );
+                case "sunburst":
+                //Rich visuals
+                    WheelSystem.drawSunburst(rad, L.col);
+                    break;
 
-      // Bead colour moves towards white when active
-      const beadCol = lerpColor(this.beadColor, color(0, 0, 100), this.pulse * 0.7);
-      fill(beadCol);
-      ellipse(bx, by, this.beadRing.size * (1 + 0.25 * this.pulse));
-    }
+                case "stripes":
+                //Rich visuals
+                WheelSystem.drawStripes(rad, L.col);
+                break;
+           }
+        }
 
-    // ---------------------------------
-    // Internal layered patterns
-    // ---------------------------------
-    for (const L of this.layers) {
-      const rad = effectiveR * L.ratio * 0.9;
 
-      switch (L.style) {
-        case "solid":
-          fill(L.col);
-          ellipse(0, 0, rad * 2);
-          break;
-
-        case "dots":
-          fill(L.col);
-          for (const d of L.dots) {
-            ellipse(d.x, d.y, d.r * 2);
-          }
-          break;
-
-        case "sunburst":
-          WheelSystem.drawSunburst(rad, L.col);
-          break;
-
-        case "stripes":
-          WheelSystem.drawStripes(rad, L.col);
-          break;
-      }
-    }
-
-    // ---------------------------------
-    // Small centre circle
-    // ---------------------------------
-    // The centre circle also scales slightly with pulse
+    // -------------------------
+    //The small circle in the center
+    // -------------------------
     fill(this.coreCol);
-    ellipse(0, 0, effectiveR * (0.18 + 0.12 * this.pulse));
+    ellipse(0, 0, effectiveR * 0.18);
 
     pop();
   }
 }
 
 // -------------------------------------
-// WheelSystem: helpers to draw patterns
+//WheelSystem
 // -------------------------------------
 const WheelSystem = {
-  // Radial "sunburst" pattern
+  //“sunburst”
   drawSunburst(rad, col) {
     const rays = int(map(rad, 20, 220, 20, 40));
 
@@ -317,7 +277,7 @@ const WheelSystem = {
       const a0 = (TWO_PI * i) / rays;
       const a1 = (TWO_PI * (i + 0.5)) / rays;
 
-      // Alternate between the layer colour and dark wedges
+      //Odd and even alternation
       fill(i % 2 === 0 ? col : color(0, 0, 15));
 
       beginShape();
@@ -328,7 +288,7 @@ const WheelSystem = {
     }
   },
 
-  // Concentric striped arcs
+  //“stripes” 
   drawStripes(rad, col) {
     const bands = int(random(4, 6));
     const thick = (rad * 0.9) / bands;
@@ -341,7 +301,7 @@ const WheelSystem = {
         const a0 = (TWO_PI * i) / segs;
         const a1 = (TWO_PI * (i + 0.6)) / segs;
 
-        // Colour shifts slightly with band index and segment index
+        //Add some changes on the original basis
         fill(
           (hue(col) + b * 8 + i * 3) % 360,
           saturation(col),
@@ -355,39 +315,37 @@ const WheelSystem = {
 };
 
 // -------------------------------------
-// BeadArc: curved connections between wheels
+// BeadArc
 // -------------------------------------
 class BeadArc {
   constructor(wA, wB) {
     const a = createVector(wA.x, wA.y);
     const b = createVector(wB.x, wB.y);
 
-    // Direction from wheel A to wheel B
+    //A to B
     const dir = p5.Vector.sub(b, a).normalize();
 
-    // Start point on the edge of wheel A
+    //starting pointA
     const rA = wA.baseR * 0.95;
     this.A = p5.Vector.add(a, p5.Vector.mult(dir, rA));
 
-    // End point on the edge of wheel B
+    //end pointB
     const rB = wB.baseR * 0.95;
     this.B = p5.Vector.sub(b, p5.Vector.mult(dir, rB));
 
-    // Chord from A to B and its midpoint
+    // chord：A to B
     const chord = p5.Vector.sub(this.B, this.A);
     const mid = p5.Vector.add(this.A, p5.Vector.mult(chord, 0.5));
 
-    // Perpendicular direction (normal) to lift the arc off the chord
     const normal = createVector(-chord.y, chord.x).normalize();
 
-    // Control point for a quadratic Bézier curve
     const curvature = chord.mag() * (0.25 + random(-0.08, 0.08));
     this.C = p5.Vector.add(mid, p5.Vector.mult(normal, curvature));
 
-    // Bead colour taken from wheel A
+    //A：beadColor
     this.col = wA.beadColor;
 
-    // Bead size and count along the curve
+    //size and number
     const beadSize = min(wA.baseR, wB.baseR) * 0.06;
     const spacing = beadSize * 1.4;
     const approxLen = chord.mag() * 1.1;
@@ -395,7 +353,6 @@ class BeadArc {
     this.beadSize = beadSize;
   }
 
-  // Quadratic Bézier interpolation between A, C, B
   _pointAt(t) {
     const mt = 1 - t;
     const x = mt * mt * this.A.x +
@@ -407,23 +364,19 @@ class BeadArc {
     return createVector(x, y);
   }
 
-  // Draw beads along the curve
   display() {
     for (let i = 0; i <= this.n; i++) {
       const t = i / this.n;
       const p = this._pointAt(t);
 
-      // Small dark halo behind each bead
       fill(0, 0, 15);
       ellipse(p.x, p.y, this.beadSize * 1.45);
 
-      // Coloured bead
       fill(this.col);
       ellipse(p.x, p.y, this.beadSize);
     }
   }
 }
-
 
 
 // ======================================================
